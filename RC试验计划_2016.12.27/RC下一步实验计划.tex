@@ -1,0 +1,58 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}          
+\usepackage{graphicx}
+\usepackage{amsthm, amsmath, amssymb}
+\usepackage{setspace}\onehalfspacing
+\usepackage[loose,nice]{units} %replace "nice" by "ugly" for units in upright fractions
+ \usepackage[UTF8, heading = false, scheme = plain]{ctex}
+ \usepackage{hyperref}
+ \usepackage{color}
+\usepackage[normalem]{ulem}
+\usepackage{url}
+\usepackage[dvipsnames]{xcolor}
+
+
+\DeclareUrlCommand\ULurl{%
+  \renewcommand\UrlFont{\ttfamily\color{blue}}%
+  \renewcommand\UrlLeft{\uline\bgroup}%
+  \renewcommand\UrlRight{\egroup}}
+ 
+\title{阅读理解下一步实验计划}
+\author{徐俊}
+\date{2016年12月27日}
+ 
+\begin{document}
+\maketitle
+
+\section{问题}
+CNN数据集中，为了增加难度同时要求模型必须依赖于“上下文信息”获取答案，而将所有的数据中的实体（潜在答案）全部替换为@entity，一篇文章中同一个实体使用同一个@entity编号但是不同文章中的同一@entity编号却可能表示不同的实体。
+
+目前的Reader均将@entity编号作为一个个独立的“词”来处理的，它们拥有自己的embedding，在softmax输出层（如果有的话）也是被当做单独的“词”来处理的。这样一来就有问题，在NN的模型中，embedding和softmax输出层的权重向量均对应一个独立的词语，而@entity符号却并不具备“独立”这个属性，因为同一个@entity符号在不同文章中代表不同的实体，而实体才是具备“独立”属性的”词“。
+
+数据集本意是要求model仅仅依赖于上下文信息来做判断，@entity仅仅作为标示符出现而不含有任何语义。
+
+但是实际操作过程中如Attention Reader中，最终的预测环节（softmax输出层）却依赖于@entity之间的不同来做分类。这在逻辑上存在一定的悖论。而丹琦的实现中，将文章中的不同实体按照出现顺序依次标号（relabel），对于模型性能的提升有较大帮助，但这一点其实并不应该被利用。
+
+在Attensum Reader中，虽然模型逻辑上没有悖论，但是实际操作中也是将不同的@entity使用不同的embedding，间接的赋予@entity编号语义。为什么不遵从数据集原意，而将所有的@entity设置同一个embedding，而用mask标识出同一个@entity标号在文中哪些位置出现？
+
+\section{动机}
+Reader添加特征的实验一直没有进展，而多项实验从不同侧面暗示上述数据处理方式存在问题，为了验证数据处理方式的问题，遵从数据集合原意测试上述Reader的真实性能。即，测试@entity的编号以及在NN中的表示对于Reader的影响，毕竟这两者不应成为模型性能的来源。
+ 
+\section{需要做的实验}
+\subsection{第一优先级的实验}
+\begin{enumerate}
+    \item  {\bf  乐高代码迁移}：将模型转移到乐高上去，期待从根本上提速；
+    \item  {\bf  数据构造}：取出@entity编号的频率影响，使得各个@entity编号出现次数相近，这样减少不同@entity编号之间的差异；
+    \item  {\bf  Attention Reader去除relabel操作下的性能实验}：验证relabel对于模型性能的影响；
+    \item  {\bf  Attention Reader使用新构造的数据}：验证Attention Reader对于@entity编号的依赖程度；
+    \item  {\bf  Attensum Reader中所有实体使用同一个embeding，使用mask标识出同一个实体出现的位置}：完全排除掉@entity之间的语义差异，最符合数据集原意；
+\end{enumerate}
+
+\subsection{第二优先级的实验以及准备}
+\begin{enumerate}
+    \item  {\bf  基于CNN数据集正在进行的实验}：等待在乐高上的模型运行成功；
+    \item  {\bf  SVM}：SVM的实验继续运行，及时很慢也需要有个结果出来；
+    \item  {\bf 切换数据集}：由于之前的核心贡献点并不同数据集强依赖，如果证实CNN数据集有问题，迅速切换是比较合适的选择；
+\end{enumerate}
+ 
+\end{document}
